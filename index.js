@@ -12,7 +12,6 @@ async function temp() {
   console.log('Starting...');
   const { access_token } = await getBearerToken();
   const videos = await getVideos(access_token);
-  videos.data.splice(1);
 
   console.log(`\nFound ${videos.data.length} streams, starting download. This might take a while`);
 
