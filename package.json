@@ -1,0 +1,15 @@
+{
+  "name": "twitch-auto-downloader",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Rowan Paul Flynn",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "node-cron": "^3.0.1",
+    "node-fetch": "2"
+  },
+  "devDependencies": {
+    "uuid": "^8.3.2"
+  }
+}
