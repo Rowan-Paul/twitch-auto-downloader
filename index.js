@@ -4,7 +4,7 @@ const cmd = require('node-cmd');
 require('dotenv').config();
 const fs = require('fs');
 
-cron.schedule('0 12 * * *', async function () {
+async function main() {
   console.log('Starting...');
   const { access_token } = await getBearerToken();
   const videos = await getVideos(access_token);
@@ -14,20 +14,23 @@ cron.schedule('0 12 * * *', async function () {
   let downloadedFiles = fs.readdirSync('./output');
 
   console.log('\nID         Title');
+  videos.data.forEach((video) => {
+    console.log(`${video.url.match(/([0-9]{10})/g)[0]} ${video.title}`);
+  });
+  console.log('\n');
+
   videos.data.forEach((video, i) => {
     const vodid = video.url.match(/([0-9]{10})/g)[0];
     const title = video.title;
-
-    console.log(`${vodid} ${title}`);
 
     if (!downloadedFiles.includes(`${vodid}_${title}.mp4`)) {
       downloadVideo(vodid, title);
       downloadAndRenderChat(vodid, title);
     } else {
-      console.log(`\nStream #${vodid} already downloaded, going to the next stream`);
+      console.log(`Stream #${vodid} already downloaded, going to the next stream`);
     }
   });
-});
+}
 
 async function getBearerToken() {
   console.log('Getting bearer token...');
@@ -87,7 +90,7 @@ async function downloadAndRenderChat(vodid, title) {
       if (err) {
         console.log(err);
       }
-      console.log(`\nFinished downloading chat for ${vodid}`);
+      console.log(`Finished downloading chat for ${vodid}`);
       renderChat(vodid, title);
     }
   );
@@ -107,4 +110,6 @@ async function renderChat(vodid, title) {
   // .stdout.on('data', (data) => console.log(data));
 }
 
-temp();
+cron.schedule('0 1 * * *', async function () {
+  main();
+});
