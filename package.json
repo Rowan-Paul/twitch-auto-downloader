@@ -6,10 +6,14 @@
   "license": "MIT",
   "dependencies": {
     "dotenv": "^16.0.1",
+    "node-cmd": "^5.0.0",
     "node-cron": "^3.0.1",
     "node-fetch": "2"
   },
   "devDependencies": {
     "uuid": "^8.3.2"
+  },
+  "scripts": {
+    "dev": "node index.js"
   }
 }
