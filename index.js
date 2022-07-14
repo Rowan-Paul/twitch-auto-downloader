@@ -4,69 +4,39 @@ const cmd = require('node-cmd');
 require('dotenv').config();
 const fs = require('fs');
 
-//TODO: check if disk has video
 //TODO: add database with logs
-//TODO: display logs somewhere
 //TODO: add ffmpeg path variable
 //TODO: add h265
+//TODO: only refetch token when the old token is expired
 async function temp() {
   console.log('Starting...');
   const { access_token } = await getBearerToken();
-  console.log('Access token: ', access_token);
-
   const videos = await getVideos(access_token);
-  console.log('Videos: ', videos);
+  videos.data.splice(1);
 
-  console.log(`Found ${videos.data.length} streams, downloading now`);
-  videos.data.forEach((video) => {
+  console.log(`\nFound ${videos.data.length} streams, starting download. This might take a while`);
+
+  let downloadedFiles = fs.readdirSync('./output');
+
+  console.log('\nID         Title');
+  videos.data.forEach((video, i) => {
     const vodid = video.url.match(/([0-9]{10})/g)[0];
     const title = video.title;
-    console.log(`VOD id+title: ${vodid}_${title}`);
 
-    let downloadedFiles = [];
-    fs.readdir('./output', (err, files) => {
-      files.forEach((file) => {
-        downloadedFiles.push(file);
-      });
-    });
+    console.log(`${vodid} ${title}`);
 
     if (!downloadedFiles.includes(`${vodid}_${title}.mp4`)) {
-      cmd
-        .run(
-          `TwitchDownloaderCLI -m VideoDownload --id ${vodid} --ffmpeg-path "ffmpeg.exe" -o "output/${vodid}_${title}.mp4"`,
-          function (err, data, stderr) {
-            console.log('Finished');
-          }
-        )
-        .stdout.on('data', (data) => console.log(data));
-      cmd
-        .run(
-          `TwitchDownloaderCLI -m ChatDownload --id ${vodid} -o "output/${vodid}_chat.json"`,
-          function (err, data, stderr) {
-            console.log('Finished');
-          }
-        )
-        .stdout.on('data', (data) => console.log(data));
-      cmd
-        .run(
-          `TwitchDownloaderCLI -m ChatRender -i "output/${vodid}_chat.json" -h 600 -w 350 --framerate 60 --update-rate 1 -o "output/${vodid}_${title}_chat.mp4"`,
-          function (err, data, stderr) {
-            console.log('Finished');
-          }
-        )
-        .stdout.on('data', (data) => console.log(data));
+      downloadVideo(vodid, title);
+      downloadAndRenderChat(vodid, title);
     } else {
-      console.log('Stream already downloaded');
+      console.log(`\nStream #${vodid} already downloaded, going to the next stream`);
     }
-
-    console.log('===');
   });
 }
 
 // cron.schedule('0 12 * * *', async function () {
 // });
 
-//TODO: only refetch when the old token is expired
 async function getBearerToken() {
   console.log('Getting bearer token...');
   let headersList = {
@@ -103,6 +73,46 @@ async function getVideos(bearer) {
   });
 
   return res;
+}
+
+async function downloadVideo(vodid, title) {
+  cmd.run(
+    `TwitchDownloaderCLI -m VideoDownload --id ${vodid} --ffmpeg-path "ffmpeg.exe" -o "output/${vodid}_${title}.mp4"`,
+    function (err, data, stderr) {
+      if (err) {
+        console.log(err);
+      }
+      console.log(`Finished downloading video for ${vodid}`);
+    }
+  );
+  // .stdout.on('data', (data) => console.log(data));
+}
+
+async function downloadAndRenderChat(vodid, title) {
+  cmd.run(
+    `TwitchDownloaderCLI -m ChatDownload --id ${vodid} -o "output/${vodid}_chat.json"`,
+    function (err, data, stderr) {
+      if (err) {
+        console.log(err);
+      }
+      console.log(`\nFinished downloading chat for ${vodid}`);
+      renderChat(vodid, title);
+    }
+  );
+  // .stdout.on('data', (data) => console.log(data));
+}
+
+async function renderChat(vodid, title) {
+  cmd.run(
+    `TwitchDownloaderCLI -m ChatRender -i "output/${vodid}_chat.json" -h 600 -w 350 --framerate 60 --update-rate 1 -o "output/${vodid}_${title}_chat.mp4"`,
+    function (err, data, stderr) {
+      if (err) {
+        console.log(err);
+      }
+      console.log(`Finished rendering chat for ${vodid}`);
+    }
+  );
+  // .stdout.on('data', (data) => console.log(data));
 }
 
 temp();
