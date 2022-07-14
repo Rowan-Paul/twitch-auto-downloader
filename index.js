@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const fetch = require('node-fetch');
-const { getGitUser, downloadVideoChat } = require('./console');
+const { downloadVideoChat } = require('./console');
 require('dotenv').config();
 
 //TODO: fetch videos from channel
