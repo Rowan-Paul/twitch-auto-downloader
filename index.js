@@ -4,11 +4,7 @@ const cmd = require('node-cmd');
 require('dotenv').config();
 const fs = require('fs');
 
-//TODO: add database with logs
-//TODO: add ffmpeg path variable
-//TODO: add h265
-//TODO: only refetch token when the old token is expired
-async function temp() {
+cron.schedule('0 12 * * *', async function () {
   console.log('Starting...');
   const { access_token } = await getBearerToken();
   const videos = await getVideos(access_token);
@@ -31,10 +27,7 @@ async function temp() {
       console.log(`\nStream #${vodid} already downloaded, going to the next stream`);
     }
   });
-}
-
-// cron.schedule('0 12 * * *', async function () {
-// });
+});
 
 async function getBearerToken() {
   console.log('Getting bearer token...');
