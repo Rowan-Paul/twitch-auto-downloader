@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const fetch = require('node-fetch');
+const { getGitUser, downloadVideoChat } = require('./console');
 require('dotenv').config();
 
 //TODO: fetch videos from channel
@@ -7,13 +8,22 @@ require('dotenv').config();
 //TODO: check if disk has video
 //TODO: add database with logs
 //TODO: display logs somewhere
-
 async function temp() {
   console.log('Starting...');
   const { access_token } = await getBearerToken();
   console.log('Access token: ', access_token);
+
   const videos = await getVideos(access_token);
   console.log('Videos: ', videos);
+
+  console.log(`Found ${videos.data.length} streams, downloading now`);
+  videos.data.forEach((video) => {
+    const vodid = video.url.match(/([0-9]{10})/g)[0];
+    console.log('VOD id: ', vodid);
+
+    downloadVideoChat(vodid, video.title, (value) => console.log(value));
+    console.log('===');
+  });
 }
 
 // cron.schedule('0 12 * * *', async function () {
