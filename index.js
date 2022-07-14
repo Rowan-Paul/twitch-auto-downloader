@@ -13,9 +13,9 @@ async function main() {
 
   let downloadedFiles = fs.readdirSync('./output');
 
-  console.log('\nID         Title');
-  videos.data.forEach((video) => {
-    console.log(`${video.url.match(/([0-9]{10})/g)[0]} ${video.title}`);
+  console.log('\ni ID         Title');
+  videos.data.forEach((video, i) => {
+    console.log(`${minTwoDigits(i + 1)} ${video.url.match(/([0-9]{10})/g)[0]} ${video.title}`);
   });
   console.log('\n');
 
@@ -24,10 +24,14 @@ async function main() {
     const title = video.title;
 
     if (!downloadedFiles.includes(`${vodid}_${title}.mp4`)) {
-      downloadVideo(vodid, title);
-      downloadAndRenderChat(vodid, title);
+      downloadVideo(vodid, title, i);
     } else {
-      console.log(`Stream #${vodid} already downloaded, going to the next stream`);
+      console.log(`Stream #${i + 1} ${vodid} already downloaded, going to the next stream`);
+    }
+    if (!downloadedFiles.includes(`{vodid}_${title}_chat.json`)) {
+      downloadAndRenderChat(vodid, title, downloadedFiles, i);
+    } else {
+      console.log(`Stream chat #${i + 1} ${vodid} already downloaded, going to the next stream`);
     }
   });
 }
@@ -70,44 +74,49 @@ async function getVideos(bearer) {
   return res;
 }
 
-async function downloadVideo(vodid, title) {
+async function downloadVideo(vodid, title, i) {
   cmd.run(
     `TwitchDownloaderCLI -m VideoDownload --id ${vodid} --ffmpeg-path "ffmpeg.exe" -o "output/${vodid}_${title}.mp4"`,
     function (err, data, stderr) {
       if (err) {
         console.log(err);
       }
-      console.log(`Finished downloading video for ${vodid}`);
+      console.log(`Finished downloading video #${i + 1} for ${vodid}`);
     }
   );
   // .stdout.on('data', (data) => console.log(data));
 }
 
-async function downloadAndRenderChat(vodid, title) {
+async function downloadAndRenderChat(vodid, title, downloadedFiles, i) {
   cmd.run(
     `TwitchDownloaderCLI -m ChatDownload --id ${vodid} -o "output/${vodid}_chat.json"`,
     function (err, data, stderr) {
       if (err) {
         console.log(err);
       }
-      console.log(`Finished downloading chat for ${vodid}`);
-      renderChat(vodid, title);
+      console.log(`Finished downloading chat #${i + 1} for ${vodid}`);
+      if (!downloadedFiles.includes(`{vodid}_${title}_chat.mp4`)) renderChat(vodid, title, i);
     }
   );
   // .stdout.on('data', (data) => console.log(data));
 }
 
-async function renderChat(vodid, title) {
+//TODO: fix emoji file in use error
+async function renderChat(vodid, title, id) {
   cmd.run(
-    `TwitchDownloaderCLI -m ChatRender -i "output/${vodid}_chat.json" -h 600 -w 350 --framerate 60 --update-rate 1 -o "output/${vodid}_${title}_chat.mp4"`,
+    `TwitchDownloaderCLI -m ChatRender -i "output/${vodid}_chat.json" -h 300 -w 350 --framerate 60 --update-rate 1 -o "output/${vodid}_${title}_chat.mp4"`,
     function (err, data, stderr) {
       if (err) {
         console.log(err);
       }
-      console.log(`Finished rendering chat for ${vodid}`);
+      console.log(`Finished rendering chat ${i + 1} for ${vodid}`);
     }
   );
   // .stdout.on('data', (data) => console.log(data));
+}
+
+function minTwoDigits(n) {
+  return (n < 10 ? '0' : '') + n;
 }
 
 cron.schedule('0 1 * * *', async function () {
